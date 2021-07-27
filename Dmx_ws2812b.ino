@@ -3,14 +3,14 @@
 #define LED_PIN   10
 
 #define LED_OFFSET 50
-#define LED_anzahl 173
+#define LED_ALLCOUNT 173
 #define split 68
 #define addr 17
 
 
-int LED_COUNT = LED_anzahl - LED_OFFSET;
+int LED_COUNT = LED_ALLCOUNT - LED_OFFSET;
 
-Adafruit_NeoPixel strip(LED_anzahl, LED_PIN, NEO_GRB );
+Adafruit_NeoPixel strip(LED_ALLCOUNT, LED_PIN, NEO_GRB );
 
 int lastr1 = 0;
 int lastg1 = 0;
@@ -20,6 +20,8 @@ int lastg2 = 0;
 int lastb2 = 0;
 int lastbrg = 0;
 
+int split = splitdef;
+
 int brg = 0;
 int r1 = 0;
 int g1 = 0;
@@ -28,6 +30,7 @@ int r2 = 0;
 int g2 = 0;
 int b2 = 0;
 int mode = 0;
+int mod = 0;
 int effectspeed = 0;
 
 //mode5
@@ -42,7 +45,12 @@ void setup () {
   strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(50);
+  strip.setPixelColor(1, strip.Color(0, 255, 0));
+  strip.show();
+  delay(500);
+  while( DMXSerial.noDataSince() > 100);
 
+  
 }
 
 void loop() {
@@ -56,19 +64,28 @@ void loop() {
     g2 = DMXSerial.read(22);                   //green
     b2 = DMXSerial.read(23);                   //blue
     mode = DMXSerial.read(24);                //mode
-    effectspeed = DMXSerial.read(25);         //effect speed
-    if (brg > 50 ) {
+    mod = DMXSerial.read(25);                 //effect speed
+    //setsplit = DMXSerial.read(26);            //split
+    /*if (mod > 50 ) {
       digitalWrite(13, HIGH);
-    } else {
+      } else {
       digitalWrite(13, LOW);
-    }
+      }*/
   }
 
-  if ( true) {
+  if ( DMXSerial.noDataSince() < 1000) {
     //listen to dmx
     strip.setBrightness(brg);
-
+    
     if (mode <= 50) {
+
+      if (mod == 0) {
+        split = splitdef;
+      } else {
+        split = map(mod,1,255,0,strip.numPixels());
+      }
+
+      
       //mode 1
       if (r1 != lastr1 || g1 != lastg1 || b1 != lastb1 || r2 != lastr2 || g2 != lastg2 || b2 != lastb2 || brg != lastbrg) {
         for (int i = LED_OFFSET; i < LED_OFFSET + split; i++) {
@@ -116,13 +133,7 @@ void loop() {
     }
   } else {
     //no signal
-    //strip.clear();
-    //strip.show();
-    for (int i = 0;  i < 10; i++) {
-      digitalWrite(13, HIGH);
-      delay(10);
-      digitalWrite(13, LOW);
-      delay(50);
-    }
+    strip.clear();
+    strip.show();
   }
 }
